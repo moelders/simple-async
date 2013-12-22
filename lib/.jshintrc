@@ -56,7 +56,7 @@
   "rhino": false,
   "wsh": false,
   "nomen": false,
-  "onevar": false,
+  "onevar": true,
   "passfail": false,
   "white": false,
   "predef": [

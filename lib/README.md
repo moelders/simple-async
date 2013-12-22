@@ -1,3 +1,3 @@
-simple-async: _app_
+simple-async: _lib_
 ===================
 

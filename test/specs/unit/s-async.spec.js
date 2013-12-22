@@ -1,5 +1,5 @@
 describe('simple-async library', function() {
-  var sAsync = require('../../../app/lib/s-async.js'),
+  var sAsync = require('../../../lib/s-async.js'),
     chai = require('chai'),
     expect = chai.expect,
     sinon = require('sinon');
@@ -13,7 +13,7 @@ describe('simple-async library', function() {
 
   describe('methods:', function() {
     describe('noConflict', function() {
-      it('should have the \'noConflict\' method', function() {
+      it('should exist the method', function() {
         expect(sAsync.noConflict).to.not.be.null.and.to.not.be.undefined;
         expect(sAsync.noConflict).to.be.a('function');
       });
@@ -24,7 +24,7 @@ describe('simple-async library', function() {
     });
 
     describe('doSeries', function() {
-      it('should have the \'doSeries\' method', function() {
+      it('should exist the method', function() {
         expect(sAsync.doSeries).to.not.be.null.and.to.not.be.undefined;
         expect(sAsync.doSeries).to.be.a('function');
       });
@@ -65,10 +65,209 @@ describe('simple-async library', function() {
           return function(next) {
             spies[i]();
             if (async) {
-              setTimeout(function(i) {
+              setTimeout(function() {
                 next();
-              }, timeout, i);
+              }, timeout);
             } else {
+              next();
+            }
+          };
+        }
+
+        function doSeriesExpectations(spies, end, max) {
+          var i;
+
+          expect(end).to.be.calledOnce.and.to.be.calledWithExactly(true);
+          for (i = 0; i < max - 1; i++) {
+            expect(spies[i]).to.have.been.calledOnce.and.to.have.been
+              .calledBefore(spies[i + 1]);
+          }
+          expect(spies[max - 1]).to.have.been.calledOnce.and.to.have.been
+            .calledBefore(end);
+        }
+
+        beforeEach(function() {
+          methods = [];
+          spies = [];
+          end = sinon.spy();
+          timer = sinon.useFakeTimers();
+
+          for (i = 0; i < max; i++) {
+            spies[i] = sinon.spy();
+            methods[i] = testMethod(i);
+          }
+        });
+
+        afterEach(function() {
+          timer.restore();
+        });
+
+        it('should execute all the synchronous methods in the same order in ' +
+            'which they have been pushed in the array and call the end ' +
+            'method with \'true\'',
+          function() {
+            async = false;
+
+            sAsync.doSeries(methods, end);
+
+            doSeriesExpectations(spies, end, max);
+          }
+        );
+
+        it('should execute all the asynchronous methods in the same order in ' +
+            'which they have been pushed in the array and call the end ' +
+            'method with \'true\'',
+          function(done) {
+            async = true;
+
+            sAsync.doSeries(methods, end);
+
+            timer.tick(timeout * max);
+
+            doSeriesExpectations(spies, end, max);
+
+            done();
+          }
+        );
+      });
+
+      describe('with a list of incorrect methods', function() {
+        var max = 5,
+          timeout = 100,
+          errorIndex = 2,
+          methods, spies, async, end, timer, i;
+
+        function testMethod(i) {
+          function _next(i, next) {
+            if (i === errorIndex) {
+              next(false);
+            } else {
+              next();
+            }
+          }
+
+          return function(next) {
+            spies[i]();
+            if (async) {
+              setTimeout(function(i, next) {
+                _next(i, next);
+              }, timeout, i, next);
+            } else {
+              _next(i, next);
+            }
+          };
+        }
+
+        function doSeriesExpectations(spies, end, errorIndex, max) {
+          var i;
+
+          expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false);
+          for (i = 0; i < errorIndex; i++) {
+            expect(spies[i]).to.have.been.calledOnce.and.to.have.been
+              .calledBefore(spies[i + 1]);
+          }
+          expect(spies[errorIndex]).to.have.been.calledOnce.and.to.have.been
+            .calledBefore(end);
+          for (i = errorIndex + 1; i < max; i++) {
+            expect(spies[i]).to.have.not.been.called;
+          }
+        }
+
+        beforeEach(function() {
+          methods = [];
+          spies = [];
+          end = sinon.spy();
+          timer = sinon.useFakeTimers();
+
+          for (i = 0; i < max; i++) {
+            spies[i] = sinon.spy();
+            methods[i] = testMethod(i);
+          }
+        });
+
+        afterEach(function() {
+          timer.restore();
+        });
+
+        it('should only execute the first two synchronous methods in the ' +
+            'same order in which they have been pushed in the array and call ' +
+            'the end method with \'false\'',
+          function() {
+            async = false;
+
+            sAsync.doSeries(methods, end);
+
+            doSeriesExpectations(spies, end, errorIndex, max);
+          }
+        );
+
+        it('should only execute the first two asynchronous methods in the ' +
+            'same order in which they have been pushed in the array and call ' +
+            'the end method with \'false\'',
+          function(done) {
+            async = true;
+
+            sAsync.doSeries(methods, end);
+
+            timer.tick(timeout * max);
+
+            doSeriesExpectations(spies, end, errorIndex, max);
+
+            done();
+          }
+        );
+      });
+    });
+
+    describe('doParallel', function() {
+      it('should exist the method', function() {
+        expect(sAsync.doParallel).to.not.be.null.and.to.not.be.undefined;
+        expect(sAsync.doParallel).to.be.a('function');
+      });
+
+      it('should not return anything', function() {
+        expect(sAsync.doParallel([], function() {})).to.be.undefined;
+      });
+
+      it('should not do anything without methods and end function', function() {
+        expect(sAsync.doParallel()).to.be.undefined;
+      });
+
+      it('should not do anything without an array of methods', function() {
+        expect(sAsync.doParallel('function1')).to.be.undefined;
+      });
+
+      it('should call the end method with false without an array of methods',
+        function() {
+          var end1 = sinon.spy(),
+            end2 = sinon.spy();
+
+          sAsync.doParallel('function1', end1);
+          sAsync.doParallel(function() {}, end2);
+
+          expect(end1).to.have.been.calledOnce.and.to.have.been
+            .calledWithExactly(false);
+          expect(end2).to.have.been.calledOnce.and.to.have.been
+            .calledWithExactly(false);
+        }
+      );
+
+      describe('with a list of correct methods', function() {
+        var max = 3,
+          maxTimeout = 300,
+          timeouts = [200, 300, 100],
+          order = [2, 0, 1],
+          methods, spies, async, end, timer, i;
+
+        function testMethod(i) {
+          return function(next) {
+            if (async) {
+              setTimeout(function(i) {
+                spies[i]();
+                next();
+              }, timeouts[i], i);
+            } else {
+              spies[i]();
               next();
             }
           };
@@ -90,33 +289,38 @@ describe('simple-async library', function() {
           timer.restore();
         });
 
-        it('should execute all the synchronous methods and call the end ' +
-            'method with \'true\'',
+        it('should execute all the synchronous methods in the same order in ' +
+            'they have been pushed in the arrayand call the end method with ' +
+            '\'true\'',
           function() {
             async = false;
 
-            sAsync.doSeries(methods, end);
+            sAsync.doParallel(methods, end);
 
             expect(end).to.be.calledOnce.and.to.be.calledWithExactly(true);
-            for (i = 0; i < max; i++) {
-              expect(spies[i]).to.have.been.calledOnce;
+            for (i = 0; i < max - 1; i++) {
+              expect(spies[i]).to.have.been.calledOnce.and.to.have.been
+                .calledBefore(spies[i + 1]);
             }
+            expect(spies[max - 1]).to.have.been.calledBefore(end);
           }
         );
 
-        it('should execute all the asynchronous methods and call the end ' +
-            'method with \'true\'',
+        it('should execute all the asynchronous methods in maximun time of ' +
+            'the longer time method and call the end method with \'true\'',
           function(done) {
             async = true;
 
-            sAsync.doSeries(methods, end);
+            sAsync.doParallel(methods, end);
 
-            timer.tick(timeout * max);
+            timer.tick(maxTimeout);
 
             expect(end).to.be.calledOnce.and.to.be.calledWithExactly(true);
-            for (i = 0; i < max; i++) {
-              expect(spies[i]).to.have.been.calledOnce;
+            for (i = 0; i < max - 1; i++) {
+              expect(spies[order[i]]).to.have.been.calledOnce.and.to.have.been
+                .calledBefore(spies[order[i + 1]]);
             }
+            expect(spies[order[max - 1]]).to.have.been.calledBefore(end);
 
             done();
           }
@@ -124,27 +328,31 @@ describe('simple-async library', function() {
       });
 
       describe('with a list of incorrect methods', function() {
-        var max = 3,
-          timeout = 100,
+        var max = 5,
+          maxTimeout = 500,
+          timeouts = [500, 300, 100, 400, 200],
+          order = [2, 4, 1, 3, 0],
+          errorIndex = 2,
           methods, spies, async, end, timer, i;
 
         function testMethod(i) {
-          return function(next) {
-            spies[i]();
-            if (async) {
-              setTimeout(function(i) {
-                if (i === 2) {
-                  next(false);
-                } else {
-                  next();
-                }
-              }, timeout, i);
+          function _next(i, next) {
+            if (i === errorIndex) {
+              spies[i](false);
+              next(false);
             } else {
-              if (i === 2) {
-                next(false);
-              } else {
-                next();
-              }
+              spies[i](true);
+              next();
+            }
+          }
+
+          return function(next) {
+            if (async) {
+              setTimeout(function(i, next) {
+                _next(i, next);
+              }, timeouts[i], i, next);
+            } else {
+              _next(i, next);
             }
           };
         }
@@ -165,56 +373,44 @@ describe('simple-async library', function() {
           timer.restore();
         });
 
-        it('should only execute the first two synchronous methods and call ' +
+        it('should only execute the first two synchronous methods in the ' +
+            'same order in which they have been pushed in the array and call ' +
             'the end method with \'false\'',
           function() {
             async = false;
 
-            sAsync.doSeries(methods, end);
+            sAsync.doParallel(methods, end);
 
-            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false);
-            for (i = 0; i < max; i++) {
-              if (i <= 2) {
-                expect(spies[i]).to.have.been.calledOnce;
-              } else {
-                expect(spies[i]).to.have.not.been.called;
-              }
+            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false).and
+              .to.have.been.calledBefore(spies[errorIndex + 1]);
+            for (i = 0; i < max - 1; i++) {
+              expect(spies[i]).to.have.been.calledOnce.and.to.have.been
+                .calledBefore(spies[i + 1]).and.to.be.calledWithExactly(
+                  i !== errorIndex);
             }
           }
         );
 
-        it('should only execute the first two asynchronous methods and call ' +
+        it('should only execute the first two asynchronous methods in the ' +
+            'same order in which they have been pushed in the array and call ' +
             'the end method with \'false\'',
           function(done) {
             async = true;
 
-            sAsync.doSeries(methods, end);
+            sAsync.doParallel(methods, end);
 
-            timer.tick(timeout * max);
+            timer.tick(maxTimeout);
 
-            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false);
-            for (i = 0; i < max; i++) {
-              if (i <= 2) {
-                expect(spies[i]).to.have.been.calledOnce;
-              } else {
-                expect(spies[i]).to.have.not.been.called;
-              }
+            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false).and
+              .to.have.been.calledBefore(spies[errorIndex + 1]);
+            for (i = 0; i < max - 1; i++) {
+              expect(spies[order[i]]).to.have.been.calledOnce.and.to.have.been
+                .calledBefore(spies[order[i + 1]]);
             }
 
             done();
           }
         );
-      });
-    });
-
-    describe('doParallel', function() {
-      it('should have the \'doParallel\' method', function() {
-        expect(sAsync.doParallel).to.not.be.null.and.to.not.be.undefined;
-        expect(sAsync.doParallel).to.be.a('function');
-      });
-
-      it('should not return anything', function() {
-        expect(sAsync.doParallel([], function() {})).to.be.undefined;
       });
     });
   });

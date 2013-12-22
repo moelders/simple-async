@@ -8,8 +8,8 @@ module.exports = function(grunt) {
       grunt: [
         'Gruntfile.js'
       ],
-      app: [
-        'app/**/*.js'
+      lib: [
+        'lib/**/*.js'
       ],
       build: [
         'build/**/*.js'
@@ -19,8 +19,8 @@ module.exports = function(grunt) {
       ]
     },
     jshintOptions = {
-      app: {
-        jshintrc: './app/.jshintrc'
+      lib: {
+        jshintrc: './lib/.jshintrc'
       },
       build: {
         jshintrc: './build/.jshintrc'
@@ -30,9 +30,9 @@ module.exports = function(grunt) {
       }
     },
     gjslintOptions = {
-      app: {
+      lib: {
         flags: [
-          '--flagfile ./app/.gjslintrc'
+          '--flagfile ./lib/.gjslintrc'
         ]
       },
       build: {
@@ -78,10 +78,10 @@ module.exports = function(grunt) {
       }
     },
     jshint: { // Static Javascript code analyzer.
-      app: {
-        options: jshintOptions.app,
+      lib: {
+        options: jshintOptions.lib,
         files: {
-          src: sources.app
+          src: sources.lib
         }
       },
       build: {
@@ -103,9 +103,9 @@ module.exports = function(grunt) {
           name: 'console'
         }
       },
-      app: {
-        options: gjslintOptions.app,
-        src: sources.app
+      lib: {
+        options: gjslintOptions.lib,
+        src: sources.lib
       },
       build: {
         options: gjslintOptions.build,
