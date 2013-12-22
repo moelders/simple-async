@@ -1,0 +1,7 @@
+/* TEAM */
+Jaime Pastor: moelders@gmail.com
+
+/* THANKS */
+
+/* SITE */
+simple-async: https://github.com/moelders/simple-async

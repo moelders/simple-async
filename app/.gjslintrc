@@ -1,0 +1,13 @@
+##
+# GJSLint documentation:
+# - https://developers.google.com/closure/utilities/docs/linter_howto
+# GJSLint errors:
+# - https://code.google.com/p/closure-linter/source/browse/trunk/closure_linter/errors.py
+##
+
+--summary
+--beep
+--time
+--disable=
+--exclude_files=
+--exclude_directories=libs

@@ -1,0 +1,7 @@
+# app
+
+# build
+build/node_modules/**
+
+# test
+test/libs/**
