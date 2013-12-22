@@ -31,7 +31,37 @@
    *   result respectively.
    */
   sAsync.doSeries = function(methods, end) {
-    end(true);
+    var _methods = [],
+      _end = (typeof end === 'function') ? end : emptyFunction,
+      index = 0;
+
+    function _execute(index) {
+      if (index < _methods.length) {
+        _methods[index++](_next);
+      } else {
+        _end(true);
+      }
+    }
+
+    function _next(error) {
+      if (typeof error === 'undefined') {
+        _execute(index++);
+      } else {
+        _end(false);
+      }
+    }
+
+    (methods instanceof Array) && methods.forEach(function(method) {
+      if (typeof method === 'function') {
+        _methods.push(method);
+      }
+    });
+
+    if (_methods.length) {
+      _execute(index++);
+    } else {
+      _end(false);
+    }
   };
 
   /**
