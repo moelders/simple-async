@@ -1,0 +1,7 @@
+--recursive
+--reporter dot
+--ui bdd
+--timeout 2000
+--growl
+--colors
+--globals chai,expect
