@@ -77,7 +77,7 @@ describe('simple-async library', function() {
         function doSeriesExpectations(spies, end, max) {
           var i;
 
-          expect(end).to.be.calledOnce.and.to.be.calledWithExactly(true);
+          expect(end).to.be.calledOnce.and.to.be.calledWithExactly();
           for (i = 0; i < max - 1; i++) {
             expect(spies[i]).to.have.been.calledOnce.and.to.have.been
               .calledBefore(spies[i + 1]);
@@ -104,7 +104,7 @@ describe('simple-async library', function() {
 
         it('should execute all the synchronous methods in the same order in ' +
             'which they have been pushed in the array and call the end ' +
-            'method with \'true\'',
+            'method without parameters',
           function() {
             async = false;
 
@@ -116,7 +116,7 @@ describe('simple-async library', function() {
 
         it('should execute all the asynchronous methods in the same order in ' +
             'which they have been pushed in the array and call the end ' +
-            'method with \'true\'',
+            'method without parameters',
           function(done) {
             async = true;
 
@@ -135,12 +135,13 @@ describe('simple-async library', function() {
         var max = 5,
           timeout = 100,
           errorIndex = 2,
+          errorDesc = 'error description',
           methods, spies, async, end, timer, i;
 
         function testMethod(i) {
           function _next(i, next) {
             if (i === errorIndex) {
-              next(false);
+              next(errorDesc);
             } else {
               next();
             }
@@ -161,7 +162,7 @@ describe('simple-async library', function() {
         function doSeriesExpectations(spies, end, errorIndex, max) {
           var i;
 
-          expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false);
+          expect(end).to.be.calledOnce.and.to.be.calledWithExactly(errorDesc);
           for (i = 0; i < errorIndex; i++) {
             expect(spies[i]).to.have.been.calledOnce.and.to.have.been
               .calledBefore(spies[i + 1]);
@@ -191,7 +192,7 @@ describe('simple-async library', function() {
 
         it('should only execute the first two synchronous methods in the ' +
             'same order in which they have been pushed in the array and call ' +
-            'the end method with \'false\'',
+            'the end method with error',
           function() {
             async = false;
 
@@ -203,7 +204,7 @@ describe('simple-async library', function() {
 
         it('should only execute the first two asynchronous methods in the ' +
             'same order in which they have been pushed in the array and call ' +
-            'the end method with \'false\'',
+            'the end method with error',
           function(done) {
             async = true;
 
@@ -260,15 +261,15 @@ describe('simple-async library', function() {
           methods, spies, async, end, timer, i;
 
         function testMethod(i) {
-          return function(next) {
+          return function(done) {
             if (async) {
               setTimeout(function(i) {
                 spies[i]();
-                next();
+                done();
               }, timeouts[i], i);
             } else {
               spies[i]();
-              next();
+              done();
             }
           };
         }
@@ -290,14 +291,14 @@ describe('simple-async library', function() {
         });
 
         it('should execute all the synchronous methods in the same order in ' +
-            'they have been pushed in the arrayand call the end method with ' +
-            '\'true\'',
+            'they have been pushed in the arrayand call the end method ' +
+            'without parameters',
           function() {
             async = false;
 
             sAsync.doParallel(methods, end);
 
-            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(true);
+            expect(end).to.be.calledOnce.and.to.be.calledWithExactly();
             for (i = 0; i < max - 1; i++) {
               expect(spies[i]).to.have.been.calledOnce.and.to.have.been
                 .calledBefore(spies[i + 1]);
@@ -307,7 +308,7 @@ describe('simple-async library', function() {
         );
 
         it('should execute all the asynchronous methods in maximun time of ' +
-            'the longer time method and call the end method with \'true\'',
+            'the longer time method and call the end method without parameters',
           function(done) {
             async = true;
 
@@ -315,7 +316,7 @@ describe('simple-async library', function() {
 
             timer.tick(maxTimeout);
 
-            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(true);
+            expect(end).to.be.calledOnce.and.to.be.calledWithExactly();
             for (i = 0; i < max - 1; i++) {
               expect(spies[order[i]]).to.have.been.calledOnce.and.to.have.been
                 .calledBefore(spies[order[i + 1]]);
@@ -333,26 +334,27 @@ describe('simple-async library', function() {
           timeouts = [500, 300, 100, 400, 200],
           order = [2, 4, 1, 3, 0],
           errorIndex = 2,
+          errorDesc = 'error description',
           methods, spies, async, end, timer, i;
 
         function testMethod(i) {
-          function _next(i, next) {
+          function _done(i, done) {
             if (i === errorIndex) {
-              spies[i](false);
-              next(false);
+              spies[i](errorDesc);
+              done(errorDesc);
             } else {
-              spies[i](true);
-              next();
+              spies[i]();
+              done();
             }
           }
 
-          return function(next) {
+          return function(done) {
             if (async) {
-              setTimeout(function(i, next) {
-                _next(i, next);
-              }, timeouts[i], i, next);
+              setTimeout(function(i, done) {
+                _done(i, done);
+              }, timeouts[i], i, done);
             } else {
-              _next(i, next);
+              _done(i, done);
             }
           };
         }
@@ -375,25 +377,30 @@ describe('simple-async library', function() {
 
         it('should only execute the first two synchronous methods in the ' +
             'same order in which they have been pushed in the array and call ' +
-            'the end method with \'false\'',
+            'the end method with error',
           function() {
             async = false;
 
             sAsync.doParallel(methods, end);
 
-            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false).and
-              .to.have.been.calledBefore(spies[errorIndex + 1]);
+            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(errorDesc)
+              .and.to.have.been.calledBefore(spies[errorIndex + 1]);
             for (i = 0; i < max - 1; i++) {
               expect(spies[i]).to.have.been.calledOnce.and.to.have.been
-                .calledBefore(spies[i + 1]).and.to.be.calledWithExactly(
-                  i !== errorIndex);
+                .calledBefore(spies[i + 1]);
+
+              if (i === errorIndex) {
+                expect(spies[i]).to.be.calledWithExactly(errorDesc);
+              } else {
+                expect(spies[i]).to.be.calledWithExactly();
+              }
             }
           }
         );
 
         it('should only execute the first two asynchronous methods in the ' +
             'same order in which they have been pushed in the array and call ' +
-            'the end method with \'false\'',
+            'the end method with error',
           function(done) {
             async = true;
 
@@ -401,11 +408,17 @@ describe('simple-async library', function() {
 
             timer.tick(maxTimeout);
 
-            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(false).and
-              .to.have.been.calledBefore(spies[errorIndex + 1]);
+            expect(end).to.be.calledOnce.and.to.be.calledWithExactly(errorDesc)
+              .and.to.have.been.calledBefore(spies[errorIndex + 1]);
             for (i = 0; i < max - 1; i++) {
               expect(spies[order[i]]).to.have.been.calledOnce.and.to.have.been
                 .calledBefore(spies[order[i + 1]]);
+
+              if (i === errorIndex) {
+                expect(spies[i]).to.be.calledWithExactly(errorDesc);
+              } else {
+                expect(spies[i]).to.be.calledWithExactly();
+              }
             }
 
             done();
