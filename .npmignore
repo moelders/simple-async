@@ -1,0 +1,11 @@
+build/
+lib/.jshintrc
+lib/.gjslintrc
+publish/
+node_modules/
+test/
+.gitattributes
+.gitignore
+.jshintignore
+.npmignore
+Gruntfile.js
