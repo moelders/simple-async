@@ -1,0 +1,10 @@
+/*!
+ * <%= pkg.name %> v<%= pkg.version %>: Javascript library.
+ * <%= pkg.homepage %>
+ *
+ * Copyright 2013 <%= pkg.author.name %>
+ * Released under the <%= pkg.license.description %>
+ * <%= pkg.license.url %>
+ *
+ * Release date: <%= grunt.template.today("yyyy-mm-dd") %>
+ */

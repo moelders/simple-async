@@ -52,17 +52,19 @@ module.exports = function(grunt) {
 
   // Load external grunt task.
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-gjslint');
   grunt.loadNpmTasks('grunt-simple-mocha');
 
   // Register grunt tasks.
-  grunt.registerTask('test', [
-    'simplemocha:unit'
-  ]);
+  grunt.registerTask('test', ['simplemocha:unit']);
+  grunt.registerTask('build', ['test', 'publish', 'uglify:lib']);
 
   // Grunt tasks configuration.
   grunt.initConfig({
-    simplemocha: {
+    pkg: grunt.file.readJSON('package.json'), // Project properties.
+    header: grunt.file.read('./build/config/header.txt'), // Library header.
+    simplemocha: { // Test runner.
       options: {
         globals: [
           'expect'
@@ -75,6 +77,35 @@ module.exports = function(grunt) {
         src: [
           'test/specs/unit/**/*.spec.js'
         ]
+      }
+    },
+    uglify: { // Compress Javascript source-code.
+      options: {
+        banner: '<%= header %>',
+        output: {
+          'ie_proof': true,
+          'comments': /^!/gi
+        },
+        compress: {
+          'sequences': true,
+          'properties': true,
+          'dead_code': true,
+          'drop_debugger': true,
+          'conditionals': true,
+          'comparisons': true,
+          'booleans': true,
+          'loops': true,
+          'hoist_funs': true,
+          'if_return': true,
+          'join_vars': true,
+          'cascade': true,
+          'side_effects': true
+        }
+      },
+      lib: {
+        files: {
+          'publish/s-async.min.js': ['lib/s-async.js']
+        }
       }
     },
     jshint: { // Static Javascript code analyzer.
