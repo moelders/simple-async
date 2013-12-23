@@ -14,7 +14,7 @@
   "bugs": {
     "url": "https://github.com/moelders/simple-async/issues"
   },
-  "main": "app/lib/s-async.js",
+  "main": "lib/s-async.js",
   "dependencies": {},
   "devDependencies": {
     "chai": "1.8.1",
