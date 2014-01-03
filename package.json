@@ -1,6 +1,6 @@
 {
   "name": "simple-async",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Light and simple Javascript library to async methods in series/parallel",
   "homepage": "https://github.com/moelders/simple-async/",
   "author": {
